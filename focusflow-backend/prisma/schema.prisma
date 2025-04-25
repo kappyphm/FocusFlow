@@ -1,0 +1,67 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  Uid       String   @id @unique
+  name      String
+  email     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subjects      Subject[] // Quan hệ không đổi
+  studySessions StudySession[] // Quan hệ không đổi
+
+  @@map("users")
+}
+
+model Subject {
+  id        Int      @id @default(autoincrement())
+  name      String
+  color     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String // Khóa ngoại vẫn trỏ tới User.id (ID nội bộ)
+  user   User   @relation(fields: [userId], references: [Uid], onDelete: Cascade)
+
+  studySessions StudySession[]
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@map("subjects")
+}
+
+model StudySession {
+  id        String   @id @default(cuid())
+  startTime DateTime
+  endTime   DateTime
+  duration  Int
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String // Khóa ngoại vẫn trỏ tới User.id (ID nội bộ)
+  user   User   @relation(fields: [userId], references: [Uid], onDelete: Cascade)
+
+  subjectId Int
+  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([subjectId])
+  @@index([startTime])
+  @@index([userId, startTime])
+  @@map("study_sessions")
+}
